@@ -4,12 +4,29 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "AbilitySystemInterface.h"
 #include "GAS_StudyCharacter.generated.h"
 
-UCLASS(config=Game)
-class AGAS_StudyCharacter : public ACharacter
+UENUM(BlueprintType)
+enum class AbilityInput : uint8
 {
+	UseAbility1 UMETA(DisplayName = "Use Spell 1"),
+	UseAbility2 UMETA(DisplayName = "Use Spell 2"),
+	UseAbility3 UMETA(DisplayName = "Use Spell 3"),
+	UseAbility4 UMETA(DisplayName = "Use Spell 4"),
+	WeaponAbility UMETA(DisplayName = "Use Weapon")
+};
+
+UCLASS(config=Game)
+class AGAS_StudyCharacter : public ACharacter, public IAbilitySystemInterface
+{
+
 	GENERATED_BODY()
+
+	UAbilitySystemComponent* GetAbilitySystemComponent() const override
+	{
+		return AbilitySystem;
+	};
 
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
@@ -18,6 +35,11 @@ class AGAS_StudyCharacter : public ACharacter
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
+
+	/** my ability system */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Abilities, meta = (AllowPrivateAccess = "true"))
+	class UAbilitySystemComponent* AbilitySystem;
+
 public:
 	AGAS_StudyCharacter();
 
@@ -29,6 +51,10 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
 
+	/* sample ability for testing */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Abilities)
+	TSubclassOf<class UGameplayAbility> Ability;
+
 protected:
 
 	/** Resets HMD orientation in VR. */
@@ -39,6 +65,11 @@ protected:
 
 	/** Called for side to side input */
 	void MoveRight(float Value);
+
+	
+	void BeginPlay();
+
+	void PossessedBy(AController * NewController);
 
 	/** 
 	 * Called via input to turn at a given rate. 

@@ -4,7 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "AbilitySystemInterface.h"
 #include "MyCharacterBase.generated.h"
+
 
 UCLASS()
 class GAS_STUDY_API AMyCharacterBase : public ACharacter

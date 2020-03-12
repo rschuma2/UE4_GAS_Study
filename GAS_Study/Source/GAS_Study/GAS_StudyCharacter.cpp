@@ -8,6 +8,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "AbilitySystemComponent.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AGAS_StudyCharacter
@@ -43,6 +44,9 @@ AGAS_StudyCharacter::AGAS_StudyCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
+	// my ability system component
+	AbilitySystem = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystem"));
+
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
 }
@@ -52,6 +56,11 @@ AGAS_StudyCharacter::AGAS_StudyCharacter()
 
 void AGAS_StudyCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
+
+	// bind ability system to input component
+	AbilitySystem->BindAbilityActivationToInputComponent(PlayerInputComponent, 
+		FGameplayAbilityInputBinds("ConfirmInput", "CancelInput", "AbilityInput"));
+
 	// Set up gameplay key bindings
 	check(PlayerInputComponent);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
@@ -74,6 +83,7 @@ void AGAS_StudyCharacter::SetupPlayerInputComponent(class UInputComponent* Playe
 
 	// VR headset functionality
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &AGAS_StudyCharacter::OnResetVR);
+
 }
 
 
@@ -131,4 +141,23 @@ void AGAS_StudyCharacter::MoveRight(float Value)
 		// add movement in that direction
 		AddMovementInput(Direction, Value);
 	}
+}
+
+void AGAS_StudyCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+	if(AbilitySystem)
+	{
+		if (HasAuthority() && Ability)
+		{
+			AbilitySystem->GiveAbility(FGameplayAbilitySpec(Ability.GetDefaultObject(), 1, 0));
+		}
+		AbilitySystem->InitAbilityActorInfo(this, this);
+	}
+}
+
+void AGAS_StudyCharacter::PossessedBy(AController * NewController)
+{
+	Super::PossessedBy(NewController);
+	AbilitySystem->RefreshAbilityActorInfo();
 }
